@@ -4,3 +4,5 @@ this is mainly meant for my friends who are authorized, so if you're looking at 
 
 
 please do not fork this, if you want o make your own please just use the template linked below ;v;
+
+[you can access the picker itself here](https://voidchimaera.github.io/voidchimaera-fav-chars/)
