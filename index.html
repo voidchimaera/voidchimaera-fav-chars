@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0">
+<title>Picker</title>
+<style>
+body {
+    background:#FFF;
+    color:#000;
+    font-family:verdana, sans-serif;
+    font-size:10pt;
+    margin:0;
+    padding:10px;
+}
+
+a:link, a:visited {
+    color:#008;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+a:active, a:hover {
+    color:#ACF;
+}
+
+.info {
+    font-weight:bold;
+}
+
+button {
+    font-family:inherit;
+    cursor:pointer;
+    border:0;
+    border-radius:3px;
+    padding:0.3em 0.5em;
+    background:#CCC;
+    color:#000;
+}
+
+button:hover {
+    background:#DDD;
+}
+
+button.disabled {
+    background:#DDD;
+    color:#888;
+    cursor:not-allowed;
+}
+
+button.disabled:hover {
+    background:#DDD;
+}
+
+#container {
+    position:relative;
+    margin-left:-10px;
+    margin-right:-10px;
+    padding:10px;
+    overflow:hidden;
+}
+
+@media (min-width:1024px) {
+    /* Put the found favorites beside the picking div when the window is sufficiently large */
+    #picking {
+        float:left;
+        width:636px;
+    }
+
+    #secondary {
+        margin-left:646px;
+    }
+}
+
+@media (min-width:1300px) {
+    /* Once we get to the point where 636px is less than half of the width of the screen, make the picking div just take up half */
+    #picking {
+        width:50%;
+    }
+
+    #secondary {
+        margin-left:51%;
+    }
+}
+
+#pick {
+    background:#58F;
+    color:#FFF;
+    font-size:larger;
+    font-weight:bold;
+    width:6em;
+    border-radius:5px;
+    margin-right:10px;
+}
+
+#pick.disabled {
+    background:#ACF;
+}
+
+#pick:hover {
+    background:#ACF;
+}
+
+.item-list {
+    padding:0;
+    list-style-type:none;
+    line-height:100px;
+}
+
+.item-list li {
+    margin:0;
+    display:inline-block;
+    height:100px;
+    width:100px;
+    line-height:100px;
+    border:3px solid transparent;
+    text-align:center;
+    position:relative;
+    vertical-align:top;
+    overflow:hidden;
+    border-radius:53px;
+    background:#F7F7F7;
+    color:#000;
+}
+
+.item-list li img {
+    vertical-align:middle;
+    max-height:100%;
+    max-width:100%;
+}
+
+.item-list li span {
+    display:inline-block;
+    vertical-align:middle;
+    line-height:1.2;
+}
+
+@media (max-width:636px) {
+    .item-list {
+        line-height:75px;
+    }
+
+    .item-list li {
+        line-height:75px;
+        height:75px;
+        width:75px;
+    }
+}
+
+@media (max-width:423px) {
+    .item-list {
+        line-height:50px;
+    }
+
+    .item-list li {
+        line-height:50px;
+        height:50px;
+        width:50px;
+    }
+}
+
+#evaluating li {
+    cursor:pointer;
+}
+
+#favorites li {
+    cursor:move;
+}
+
+.item-list li:hover {
+    background:#CDF;
+}
+
+.item-list.sorting li:hover {
+    background:#F7F7F7;
+}
+
+#evaluating li.selected {
+    border:3px solid #7AC;
+}
+
+#evaluating, #buttons {
+    text-align:center;
+    margin:auto;
+}
+
+#evaluating li.notice {
+    width:auto;
+    height:auto;
+    max-width:260px;
+    margin:auto;
+    background:#F7F7F7;
+    border-radius:10px;
+    padding:30px 30px;
+    color:#000;
+    text-align:center;
+    line-height:1.4;
+    cursor:auto;
+    font-size:10pt;
+}
+
+#buttons {
+    margin-top:30px;
+    position:relative;
+    z-index:3;
+}
+
+#shared-list-modal {
+    position:absolute;
+    background:#FFF;
+    margin:60px auto;
+    top:0;
+    right:0;
+    left:0;
+    width:650px;
+    max-width:95%;
+    box-sizing:border-box;
+    padding:20px 50px 50px;
+    box-shadow:1px 1px 5px #333;
+    z-index:100;
+}
+
+@media(max-width:700px) {
+    #shared-list-modal {
+        padding:20px;
+    }
+}
+
+#shared-list-modal:before {
+    content:'';
+    position:fixed;
+    background:#FFF;
+    opacity:0.5;
+    top:0;
+    right:0;
+    bottom:0;
+    left:0;
+    z-index:-1;
+}
+
+#shared-list-modal .item-list {
+    text-align:center;
+    margin:2em 0;
+}
+
+#shared-list-modal .close {
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:30px;
+    line-height:30px;
+    color:#AAA;
+    font-weight:bold;
+    text-align:center;
+    background:none;
+    padding:0;
+    font-size:larger;
+}
+
+#shared-list-modal .close:hover {
+    background:#EEE;
+}
+
+#shared-list-modal .buttons {
+    text-align:center;
+    line-height:3.5em;
+}
+
+#shared-list-modal button {
+    padding:0.9em 2em;
+    margin:0 0.2em;
+}
+</style>
+</head>
+<body>
+<h1>Picker</h1>
+
+<p>You can include any content you want here.</p>
+
+<div id="container">
+
+<div id="picking">
+<ul id="evaluating" class="item-list">
+</ul>
+
+<p id="buttons"><button id="pick">Pick</button> <button id="pass">Pass</button> <button id="undo">Undo</button> <button id="redo">Redo</button></p>
+</div>
+
+<div id="secondary">
+<h2>Found favorites</h2>
+
+<ol id="favorites" class="item-list">
+</ol>
+
+<p><a href="" id="shortcode-link">Permalink to this list</a></p>
+</div>
+</div>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="picker.js"></script>
+<script src="picker-ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+
+<div id="shared-list-modal" style="display:none">
+<button class="close shared-list-skip">&times;</button>
+<h2>Shared list</h2>
+
+<p>Generated by this picker tool. Create your own list or continue from this one below!</p>
+
+<ol id="shared-list" class="item-list">
+</ol>
+
+<p class="buttons"><button id="shared-list-continue">Continue from this list</button> <button class="shared-list-skip">Make my own list</button></p>
+</div>
+<script>
+'use strict';
+
+var items = [
+{id: 'night bat', name: 'nightshade bat✨', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/17307711?1659329347'},
+{id: 'boat hat', name: 'boat hat lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/6072899?1581917305'},
+{id: 'echo', name: 'echo (bats)', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/8461847?1633544559'},
+{id: 'researcher', name: 'researcher', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12039201?1627179180'},
+{id: 'crystal lad', name: 'crystal lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12039176?1627178965'},
+{id: 'butterfly', name: 'silver fairy gal', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/15309720?1647953158'},
+{id: 'sunshine moth', name: 'yellow teal moth', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/15084403?1646636505'},
+{id: 'akari', name: 'akari', image: 'https://cdn.discordapp.com/attachments/705109241878282312/1000893283138015373/unknown.png'},
+{id: 'dakila', name: 'dakila', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/5021723?1569545786'},
+{id: 'kiri', name: 'kiri', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/16399447?1660517733'},
+{id: 'arm cannon', name: 'arm cannon lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/13220909?1663786279'},
+{id: 'chocoberry', name: 'choco strawberry lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/13213448?1634813779'},
+{id: 'cake arm', name: 'cake arm lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/50101373_LXj.jpg'},
+{id: 'pancake', name: 'pancake lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12486569?1661984110'},
+{id: 'mina', name: 'mina', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/24131967_sBH.png'},
+{id: 'cafe owner', name: 'cafe lass', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/11297112?1622304593'},
+{id: 'aero', name: 'aero', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/2047691?1663787167'},
+{id: 'bee', name: 'sabina/bee', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/4875200?1569145184'},
+{id: 'asher', name: 'asher', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/4536011?1603146095'},
+{id: 'party', name: 'colorful lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/53620379_EcL_15963850.png?1663787294'},
+{id: 'fi', name: 'fi', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/4307730?1642824896'},
+{id: 'cherry', name: 'mara/cherry', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/6114601?1645939982'},
+{id: 'mystery', name: 'mystery', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/4307810?1626792382'},
+{id: 'piko', name: 'piko', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/39055416_uEG_4307766.png?1653261719'},
+{id: 'summer lad', name: 'summer lad 🍋🌊', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/16775895?1656292159'},
+{id: 'void bomb', name: 'void bomb lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/17292297?1659244749'},
+{id: 'electric bunny', name: 'electric bunny', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/13285860?1635297045'},
+{id: 'luca', name: 'luca', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/9226918?1663793019'},
+{id: 'vel', name: 'vel', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/40994720_bOd_12285992.png?1645760119'},
+{id: 'vesper', name: 'vesper', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/17611790_0N9_5223633.png?1645763855'},
+{id: 'lime', name: 'lime', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/5949555?1580605547'},
+{id: 'aiden', name: 'aiden', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/5011026?1569386863'},
+{id: 'anabel', name: 'abbie', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/24098510_rXs.png'},
+{id: 'anno', name: 'anno', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/55120533_MP4.png'},
+{id: 'capucine', name: 'capucine', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/2063824?1594037235'},
+{id: 'charlie', name: 'charlie', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/14651837_CQO_2066566.png?1630772287'},
+{id: 'fais', name: 'fais', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/4341057?1626328077'},
+{id: 'josie', name: 'josephine', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12379147?1658124391'},
+{id: 'casper', name: 'casper', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12379265?1658124363'},
+{id: 'payten', name: 'payten', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12379097?1658124310'},
+{id: 'pama', name: 'pama', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/38983438_ll2_5090489.png?1653263440'},
+{id: 'reverie', name: 'reverie', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/5793475?1613947530'},
+{id: 'alice', name: 'alice', image: 'https://file.toyhou.se/characters/2047689?1565373685'},
+{id: 'anju', name: 'anju', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/10487036?1641110066'},
+{id: 'bailey', name: 'bailey', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/47171512_ccH_4319870.png?1653263615'},
+{id: 'fleur', name: 'fleur', image: 'https://file.toyhou.se/characters/3984783?'},
+{id: 'haven', name: 'haven', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/11900195?1626273525'},
+{id: 'rosie', name: 'rosie', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/15309575?1656963843'},
+{id: 'rue', name: 'rue', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/6450559?1585695186'},
+{id: 'solace', name: 'solace', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12376395?1661316973'},
+{id: 'trans bunny lass', name: 'trans bunny lass', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/11972718?1647290759'},
+{id: 'senka', name: 'senka', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/36371395_cTH.png'},
+{id: 'risk', name: 'risk', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/37428036_uzt_7092650.png?1658031386'},
+{id: 'lillix', name: 'lillix', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/53535807_Cnl_14361102.png?1663798574'},
+{id: 'alula', name: 'alula', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/22546658_maN_6930950.png?1646713878'},
+{id: 'chirp', name: 'chirp', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/14109859?1640912333'},
+{id: 'ikosa', name: 'ikosa', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/13975585?1640028227'},
+{id: 'astraflora', name: 'astroflorist', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/7262740?1638969210'},
+{id: 'leine', name: 'leine', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/15813603?1650802899'},
+{id: 'tbn', name: 'tbn', image: 'https://f2.toyhou.se/file/f2-toyhou-se/thumbnails/40406126_VQO_12989456.png?1645781104'},
+{id: 'tovva', name: 'tovva', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12989498?1633233741'},
+{id: 'bianka', name: 'bianka', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/3958146?1624842020'},
+{id: 'kuiper?', name: 'kuiper?', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12351564?1629043647'},
+{id: 'mirage', name: 'mirage', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/14128311?1663799266'},
+{id: 'nyomi', name: 'nyomi', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/11699165?1624919862'},
+{id: 'sev', name: 'sev', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/2089687?1581558212'},
+{id: 'sorrel', name: 'sorrel', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/12127571?1627717232'},
+{id: 'dreamweaver', name: 'dream lad', image: 'https://f2.toyhou.se/file/f2-toyhou-se/characters/13375967?1635920949'},
+/*{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},
+{id: '', name: '', image: ''},*/
+];
+
+var myPicker = new picker.Picker({
+    items: items,
+    localStorageKey: 'picker-state-characters'
+});
+
+var pickerUI = new PickerUI(myPicker, {
+    elements: {
+        pick: "#pick",
+        pass: "#pass",
+        undo: "#undo",
+        redo: "#redo",
+        evaluating: "#evaluating",
+        favorites: "#favorites",
+        shortcodeLink: "#shortcode-link",
+        sharedListContainer: "#shared-list-modal",
+        sharedList: "#shared-list",
+        sharedListContinue: "#shared-list-continue",
+        sharedListSkip: ".shared-list-skip"
+    }
+});
+
+pickerUI.initialize();
+
+/* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
+var sortable = new Sortable(pickerUI.elem.favorites.get(0), {
+    draggable: '.item',
+    animation: 100,
+    onStart: function() {
+        pickerUI.elem.favorites.addClass("sorting");
+    },
+    onEnd: function() {
+        pickerUI.elem.favorites.removeClass("sorting");
+    },
+    onUpdate: function() {
+        myPicker.setFavorites(pickerUI.elem.favorites.children().map(function() {
+            return pickerUI.getItem(this);
+        }).get());
+        pickerUI.update(true);
+    }
+});
+/* End sortable favorites */
+</script>
+</body>
+</html>
